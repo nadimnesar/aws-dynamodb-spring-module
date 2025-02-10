@@ -1,0 +1,1 @@
+# aws-dynamodb-spring-module
