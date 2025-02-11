@@ -1,3 +1,9 @@
+### App ###
+localstack/
+volume/
+.env
+
+### Spring ###
 HELP.md
 target/
 !.mvn/wrapper/maven-wrapper.jar
