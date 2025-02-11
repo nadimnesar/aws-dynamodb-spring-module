@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: dynamoDbModule
+
+server:
+  port: 8080
+
+aws:
+  dynamodb:
+    endpoint: ${AWS_DYNAMODB_ENDPOINT:http://localhost:4566}
+    region: ${AWS_DYNAMODB_REGION}
+    access-key: ${AWS_DYNAMODB_ACCESS_KEY}
+    secret-key: ${AWS_DYNAMODB_SECRET_KEY}
