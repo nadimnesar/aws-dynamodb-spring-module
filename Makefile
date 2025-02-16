@@ -29,3 +29,22 @@ rebuild:
 	docker-compose down -v
 	docker volume prune -f
 	docker-compose up -d --force-recreate --build
+
+dynamodb-up:
+	aws dynamodb list-tables --region $(AWS_DYNAMODB_REGION) --endpoint-url $(AWS_DYNAMODB_ENDPOINT) | grep -w Comment > /dev/null \
+	&& echo "Table 'Comment' already exists. Skipping creation." \
+	|| ( \
+		echo "Creating table 'Comment'..."; \
+		aws dynamodb create-table \
+			--table-name Comment \
+			--attribute-definitions \
+				AttributeName=id,AttributeType=S \
+				AttributeName=date,AttributeType=S \
+			--key-schema \
+				AttributeName=id,KeyType=HASH \
+				AttributeName=date,KeyType=RANGE \
+			--provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
+			--region $(AWS_DYNAMODB_REGION) \
+			--endpoint-url $(AWS_DYNAMODB_ENDPOINT); \
+		echo "Table 'Comment' created successfully." \
+	)
