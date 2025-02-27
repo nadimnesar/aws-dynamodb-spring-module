@@ -21,17 +21,48 @@ make stop
 
 ### App APIs
 
-#### Get All Comments
-```curl
-curl --location 'http://localhost:8080/api/comment/all'
-```
-
-#### Create New Comment
+#### Create
 ```curl
 curl --location 'http://localhost:8080/api/comment/create' \
 --header 'Content-Type: application/json' \
 --data '{
-    "text": "This is my comment",
+    "postId": "01",
+    "text": "This is 02 my comment",
     "author": "tester"
 }'
+```
+
+#### Get All Comments
+```curl
+curl --location 'http://localhost:8080/api/comment/getAllComments'
+```
+
+#### Get By CommentId
+```curl
+curl --location 'http://localhost:8080/api/comment/getByCommentId?commentId=?' \
+--data ''
+```
+
+#### Get By PostId
+```curl
+curl --location 'http://localhost:8080/api/comment/getCommentsByPostId?postId=01' \
+--data ''
+```
+
+#### Update
+```curl
+curl --location --request PUT 'http://localhost:8080/api/comment/update?commentId=?' \
+--header 'Content-Type: application/json' \
+--data '{
+    "postId": "01",
+    "text": "This is 03 my comment",
+    "author": "tester"
+}'
+```
+
+#### Delete
+```curl
+curl --location --request DELETE 'http://localhost:8080/api/comment/deleteByCommentId?commentId=?' \
+--header 'Content-Type: application/json' \
+--data ''
 ```

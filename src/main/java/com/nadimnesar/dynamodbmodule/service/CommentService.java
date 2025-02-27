@@ -2,6 +2,7 @@ package com.nadimnesar.dynamodbmodule.service;
 
 import com.nadimnesar.dynamodbmodule.entity.Comment;
 import com.nadimnesar.dynamodbmodule.repository.CommentRepository;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -9,33 +10,59 @@ import java.util.Optional;
 
 @Service
 public class CommentService {
-    private final CommentRepository commentsRepository;
+    private final CommentRepository commentRepository;
 
-    public CommentService(CommentRepository commentsRepository) {
-        this.commentsRepository = commentsRepository;
+    public CommentService(CommentRepository commentRepository) {
+        this.commentRepository = commentRepository;
     }
 
-    public Comment saveComment(Comment comment) {
-        return commentsRepository.save(comment);
+    public void saveComment(Comment comment) {
+        commentRepository.save(comment);
     }
 
-    public Optional<Comment> getCommentByIdAndDate(String id, String date) {
-        return commentsRepository.findByIdAndDate(id, date);
+    public ResponseEntity<?> getByCommentId(String commentId) {
+        Optional<Comment> comment = commentRepository.findByCommentId(commentId);
+        if (comment.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        } else {
+            return ResponseEntity.ok(comment.get());
+        }
     }
 
-    public List<Comment> getCommentById(String id) {
-        return commentsRepository.findById(id);
+    public ResponseEntity<?> getAllComments() {
+        List<Comment> comments = commentRepository.findAllComments();
+        if (comments.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        } else {
+            return ResponseEntity.ok(comments);
+        }
     }
 
-    public List<Comment> getCommentsByDateRange(String postId, String startDate, String endDate) {
-        return commentsRepository.findByIdAndDateBetween(postId, startDate, endDate);
+    public ResponseEntity<?> getCommentsByPostId(String postId) {
+        List<Comment> comments = commentRepository.findCommentsByPostId(postId);
+        if (comments.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        } else {
+            return ResponseEntity.ok(comments);
+        }
     }
 
-    public void deleteComment(String id, String date) {
-        commentsRepository.deleteByIdAndDate(id, date);
+    public ResponseEntity<?> deleteByCommentId(String commentId) {
+        Optional<Comment> comment = commentRepository.findByCommentId(commentId);
+        if (comment.isPresent()) {
+            comment.get().setDeleted(true);
+            commentRepository.save(comment.get());
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
-    public List<Comment> getAllComments() {
-        return commentsRepository.findAll();
+    public ResponseEntity<?> updateComment(String commentId, Comment comment) {
+        if (commentRepository.updateComment(commentId, comment)) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 }
