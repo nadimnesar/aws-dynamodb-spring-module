@@ -3,23 +3,21 @@ package com.nadimnesar.dynamodbmodule.repository;
 import com.nadimnesar.dynamodbmodule.entity.Comment;
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Repository;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.Key;
-import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.*;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Repository
 public class CommentRepository {
 
     private final DynamoDbEnhancedClient enhancedClient;
     private DynamoDbTable<Comment> commentTable;
+    private DynamoDbIndex<Comment> commentIdIndex;
+    private DynamoDbIndex<Comment> postIdIndex;
 
     public CommentRepository(DynamoDbEnhancedClient enhancedClient) {
         this.enhancedClient = enhancedClient;
@@ -28,65 +26,66 @@ public class CommentRepository {
     @PostConstruct
     private void init() {
         this.commentTable = enhancedClient.table("Comment", TableSchema.fromBean(Comment.class));
+        this.commentIdIndex = commentTable.index("CommentIdGSI");
+        this.postIdIndex = commentTable.index("PostIdGSI");
     }
 
-    public Comment save(Comment comment) {
-        if (comment.getId() == null || comment.getId().isEmpty()) {
-            comment.setId(UUID.randomUUID().toString());
+    public void save(Comment comment) {
+        if (comment.getCommentId() == null || comment.getCommentId().isEmpty()) {
+            comment.setCommentId(UUID.randomUUID().toString());
         }
-
-        if (comment.getDate() == null) {
-            comment.setDate(new Date().toString());
-        }
-
+        comment.setCreatedAt(LocalDateTime.now());
+        comment.setUpdatedAt(comment.getCreatedAt());
         commentTable.putItem(comment);
-        return comment;
     }
 
-    public Optional<Comment> findByIdAndDate(String id, String date) {
-        return Optional.ofNullable(commentTable.getItem(
-                Key.builder()
-                        .partitionValue(id)
-                        .sortValue(date)
-                        .build()
-        ));
-    }
-
-    public List<Comment> findById(String id) {
-        QueryConditional queryConditional = QueryConditional
-                .keyEqualTo(Key.builder().partitionValue(id).build());
-
-        return commentTable.query(queryConditional)
-                .items()
-                .stream()
-                .collect(Collectors.toList());
-    }
-
-    public List<Comment> findByIdAndDateBetween(String id, String startDate, String endDate) {
-        QueryConditional queryConditional = QueryConditional
-                .sortBetween(
-                        Key.builder().partitionValue(id).sortValue(startDate).build(),
-                        Key.builder().partitionValue(id).sortValue(endDate).build()
-                );
-
-        return commentTable.query(queryConditional)
-                .items()
-                .stream()
-                .collect(Collectors.toList());
-    }
-
-    public void deleteByIdAndDate(String id, String date) {
-        commentTable.deleteItem(
-                Key.builder()
-                        .partitionValue(id)
-                        .sortValue(date)
-                        .build()
-        );
-    }
-
-    public List<Comment> findAll() {
+    public List<Comment> findAllComments() {
         return commentTable.scan()
                 .items()
-                .stream().toList();
+                .stream()
+                .filter(comment -> !comment.isDeleted())
+                .toList();
+    }
+
+    public Optional<Comment> findByCommentId(String commentId) {
+        QueryConditional queryConditional = QueryConditional.keyEqualTo(Key.builder()
+                .partitionValue(commentId)
+                .build());
+
+        return commentIdIndex.query(r -> r.queryConditional(queryConditional))
+                .stream().findFirst().flatMap(commentPage -> commentPage.items().stream().findFirst());
+    }
+
+    public List<Comment> findCommentsByPostId(String postId) {
+        QueryConditional queryConditional = QueryConditional.keyEqualTo(Key.builder()
+                .partitionValue(postId)
+                .build());
+
+        return postIdIndex.query(r -> r.queryConditional(queryConditional))
+                .stream()
+                .flatMap(commentPage -> commentPage.items().stream())
+                .filter(comment -> !comment.isDeleted())
+                .toList();
+    }
+
+    public boolean updateComment(String commentId, Comment comment) {
+        Optional<Comment> commentOptional = findByCommentId(commentId);
+        if (commentOptional.isPresent()) {
+            Comment existingComment = commentOptional.get();
+
+            if (comment.getText() != null) {
+                existingComment.setText(comment.getText());
+            }
+            if (comment.getAuthor() != null) {
+                existingComment.setAuthor(comment.getAuthor());
+            }
+
+            existingComment.setUpdatedAt(LocalDateTime.now());
+            commentTable.updateItem(existingComment);
+
+            return true;
+        } else {
+            return false;
+        }
     }
 }

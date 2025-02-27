@@ -26,13 +26,28 @@ public class CommentController {
         }
     }
 
-    @GetMapping("/getById")
-    public ResponseEntity<?> getCommentById(@RequestParam String id) {
-        return new ResponseEntity<>(commentService.getCommentById(id), HttpStatus.OK);
+    @GetMapping("/getByCommentId")
+    public ResponseEntity<?> getCommentById(@RequestParam String commentId) {
+        return new ResponseEntity<>(commentService.getByCommentId(commentId), HttpStatus.OK);
     }
 
-    @GetMapping("/all")
-    public ResponseEntity<?> getAllComment() {
+    @GetMapping("/getAllComments")
+    public ResponseEntity<?> getAllComments() {
         return new ResponseEntity<>(commentService.getAllComments(), HttpStatus.OK);
+    }
+
+    @GetMapping("/getCommentsByPostId")
+    public ResponseEntity<?> getCommentsByPostId(@RequestParam String postId) {
+        return new ResponseEntity<>(commentService.getCommentsByPostId(postId), HttpStatus.OK);
+    }
+
+    @DeleteMapping("/deleteByCommentId")
+    public ResponseEntity<?> deleteByCommentId(@RequestParam String commentId) {
+        return new ResponseEntity<>(commentService.deleteByCommentId(commentId), HttpStatus.OK);
+    }
+
+    @PutMapping("/update")
+    public ResponseEntity<?> updateComment(@RequestParam String commentId, @RequestBody Comment comment) {
+        return new ResponseEntity<>(commentService.updateComment(commentId, comment), HttpStatus.OK);
     }
 }

@@ -31,20 +31,34 @@ rebuild:
 	docker-compose up -d --force-recreate --build
 
 dynamodb-up:
-	aws dynamodb list-tables --region $(AWS_DYNAMODB_REGION) --endpoint-url $(AWS_DYNAMODB_ENDPOINT) | grep -w Comment > /dev/null \
+	aws dynamodb list-tables --region $(AWS_DYNAMODB_REGION) --endpoint-url $(AWS_DYNAMODB_ENDPOINT) | grep -w '"Comment"' > /dev/null \
 	&& echo "Table 'Comment' already exists. Skipping creation." \
 	|| ( \
 		echo "Creating table 'Comment'..."; \
 		aws dynamodb create-table \
 			--table-name Comment \
 			--attribute-definitions \
-				AttributeName=id,AttributeType=S \
-				AttributeName=date,AttributeType=S \
+				AttributeName=postId,AttributeType=S \
+				AttributeName=commentId,AttributeType=S \
 			--key-schema \
-				AttributeName=id,KeyType=HASH \
-				AttributeName=date,KeyType=RANGE \
+				AttributeName=postId,KeyType=HASH \
+				AttributeName=commentId,KeyType=RANGE \
+			--global-secondary-indexes "$$(echo '[ \
+				{ \
+					"IndexName": "CommentIdGSI", \
+					"KeySchema": [ { "AttributeName": "commentId", "KeyType": "HASH" } ], \
+					"Projection": { "ProjectionType": "ALL" }, \
+					"ProvisionedThroughput": { "ReadCapacityUnits": 5, "WriteCapacityUnits": 5 } \
+				}, \
+				{ \
+					"IndexName": "PostIdGSI", \
+					"KeySchema": [ { "AttributeName": "postId", "KeyType": "HASH" } ], \
+					"Projection": { "ProjectionType": "ALL" }, \
+					"ProvisionedThroughput": { "ReadCapacityUnits": 5, "WriteCapacityUnits": 5 } \
+                } \
+			]' | jq -c .)" \
 			--provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
 			--region $(AWS_DYNAMODB_REGION) \
 			--endpoint-url $(AWS_DYNAMODB_ENDPOINT); \
-		echo "Table 'Comment' created successfully." \
+		echo "Table 'Comment' created successfully."; \
 	)
