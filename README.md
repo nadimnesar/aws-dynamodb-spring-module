@@ -2,6 +2,11 @@
 
 This module provides a local setup for DynamoDB using LocalStack and a Spring Boot configuration for seamless integration. It ensures data persistence and includes a DynamoDB Web Admin UI for easy database management.
 
+### Prerequisite
+* Docker Compose
+* Create .env file from example
+* AWS CLI (Configure with .env examples)
+
 ### Running DynamoDB Locally
 
 #### Start DynamoDB and Admin UI
@@ -27,7 +32,7 @@ curl --location 'http://localhost:8080/api/comment/create' \
 --header 'Content-Type: application/json' \
 --data '{
     "postId": "01",
-    "text": "This is 02 my comment",
+    "text": "This is 01 my comment",
     "author": "tester"
 }'
 ```
@@ -45,7 +50,7 @@ curl --location 'http://localhost:8080/api/comment/getByCommentId?commentId=?' \
 
 #### Get By PostId
 ```curl
-curl --location 'http://localhost:8080/api/comment/getCommentsByPostId?postId=01' \
+curl --location 'http://localhost:8080/api/comment/getCommentsByPostId?postId=?' \
 --data ''
 ```
 
@@ -55,7 +60,7 @@ curl --location --request PUT 'http://localhost:8080/api/comment/update?commentI
 --header 'Content-Type: application/json' \
 --data '{
     "postId": "01",
-    "text": "This is 03 my comment",
+    "text": "this is 02 my comment",
     "author": "tester"
 }'
 ```
